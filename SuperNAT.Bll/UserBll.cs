@@ -14,15 +14,24 @@ namespace SuperNAT.Bll
     {
         private UserDal userDal = new UserDal();
 
-        public ReturnResult<bool> Add(User model)
+        public ApiResult<bool> Add(User model)
         {
-            using (userDal)
+            using (Trans t = new Trans())
             {
-                return userDal.Add(model);
+                var user = userDal.GetAll("where user_name=@user_name", model, t);
+                if (user.Any())
+                    return ApiResult<bool>.Fail("用户名已存在！");
+                var add = userDal.Add(model, t);
+                if (!add.Result)
+                    return add;
+
+                t.Commit();
+                add.Message = "注册成功";
+                return add;
             }
         }
 
-        public ReturnResult<bool> Update(User model)
+        public ApiResult<bool> Update(User model)
         {
             using (userDal)
             {
@@ -30,7 +39,7 @@ namespace SuperNAT.Bll
             }
         }
 
-        public ReturnResult<bool> Delete(User model)
+        public ApiResult<bool> Delete(User model)
         {
             using (userDal)
             {
@@ -38,7 +47,7 @@ namespace SuperNAT.Bll
             }
         }
 
-        public ReturnResult<User> GetOne(User model)
+        public ApiResult<User> GetOne(User model)
         {
             using (userDal)
             {
@@ -46,7 +55,7 @@ namespace SuperNAT.Bll
             }
         }
 
-        public ReturnResult<List<User>> GetList(string where)
+        public ApiResult<List<User>> GetList(string where)
         {
             using (userDal)
             {
@@ -54,15 +63,23 @@ namespace SuperNAT.Bll
             }
         }
 
-        public ReturnResult<User> Login(User model)
+        public ApiResult<User> Login(User model)
         {
-            using (userDal)
+            using (Trans t = new Trans())
             {
-                return userDal.Login(model);
+                var login = userDal.Login(model, t);
+                if (!login.Result)
+                    return login;
+
+                login.Data.last_login_time = DateTime.Now;
+                userDal.UpdateLastLogin(login.Data, t);
+
+                t.Commit();
+                return login;
             }
         }
 
-        public ReturnResult<bool> UpdateUser(User model)
+        public ApiResult<bool> UpdateUser(User model)
         {
             using (userDal)
             {
@@ -70,7 +87,7 @@ namespace SuperNAT.Bll
             }
         }
 
-        public ReturnResult<bool> DisableUser(User model)
+        public ApiResult<bool> DisableUser(User model)
         {
             using (userDal)
             {
@@ -78,7 +95,7 @@ namespace SuperNAT.Bll
             }
         }
 
-        public ReturnResult<User> GetUserInfo(string user_id)
+        public ApiResult<User> GetUserInfo(string user_id)
         {
             using (userDal)
             {
@@ -86,7 +103,7 @@ namespace SuperNAT.Bll
             }
         }
 
-        public ReturnResult<List<User>> GetList(User model)
+        public ApiResult<List<User>> GetList(User model)
         {
             using (userDal)
             {
